@@ -1,13 +1,14 @@
 package pw.lunzi.cloudstorage
 
-import android.content.Intent
 import android.os.Bundle
+import android.support.design.widget.TextInputLayout
 import android.support.v7.app.AppCompatActivity
-import android.widget.EditText
+import android.view.View
 
 class LoginActivity : AppCompatActivity() {
     companion object {
         var isLogin = false
+        var session = ""
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -15,18 +16,14 @@ class LoginActivity : AppCompatActivity() {
         setContentView(R.layout.activity_login)
     }
 
-    fun loginOnClick(){
-        startActivity(Intent("android.intent.action.MAIN"))
-        val username = findViewById<EditText>(R.id.editText_Username).text
-        val password = findViewById<EditText>(R.id.editText_password).text
-        if (username.isEmpty() || password.isEmpty()) {
-        }
+    fun loginOnClick(view: View) {
+        val myPasswordEditText = findViewById<MyPasswordEditText>(R.id.editText_password)
+        myPasswordEditText.startShakeAnimation()
+        findViewById<TextInputLayout>(R.id.layout).error = getString(R.string.tips_password)
     }
 
-    fun registerOnClick(){
+    fun registerOnClick(view: View){
 
     }
-
-
 
 }

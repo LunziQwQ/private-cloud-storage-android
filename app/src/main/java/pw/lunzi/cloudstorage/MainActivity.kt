@@ -3,8 +3,8 @@ package pw.lunzi.cloudstorage
 import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.BottomNavigationView
+import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
-import android.view.View
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
@@ -16,8 +16,16 @@ class MainActivity : AppCompatActivity() {
                 return@OnNavigationItemSelectedListener true
             }
             R.id.navigation_myspace -> {
-//                message.setText(R.string.title_my_space)
-                return@OnNavigationItemSelectedListener true
+                if(!LoginActivity.isLogin) {
+                    val builder = AlertDialog.Builder(this)
+                    builder.setTitle(getString(R.string.alert_login))
+                    builder.setPositiveButton(getString(R.string.word_login), { _, _ ->
+                        startActivity(Intent("Login"))
+                    })
+                    builder.setNegativeButton(getString(R.string.word_cancle), { _, _ -> })
+                    builder.create().show()
+                }
+                return@OnNavigationItemSelectedListener LoginActivity.isLogin
             }
             R.id.navigation_notifications -> {
 //                message.setText(R.string.title_notifications)
@@ -31,8 +39,5 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener)
-
-        startActivity(Intent("Login"))
-
     }
 }

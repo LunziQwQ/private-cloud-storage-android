@@ -3,8 +3,16 @@
     <string name="title_common">Common</string>
     <string name="title_my_space">My Space</string>
     <string name="title_notifications">Notifications</string>
-    <string name="info_login">Login</string>
-    <string name="info_password">Password</string>
-    <string name="tips_login">Please enter your username</string>
-    <string name="info_register">Register</string>
+    <string name="word_login">Login</string>
+    <string name="word_username">Username</string>
+    <string name="word_password">Password</string>
+    <string name="tips_username">Please check your username</string>
+    <string name="tips_password">Please check your password</string>
+    <string name="word_register">Register</string>
+    <string name="alert_login">Please login first</string>
+    <string name="alert_needlogin">Show your own place need to login firlst</string>
+    <string name="word_cancle">Cancle</string>
+    <string name="word_mkdir">Mkdir</string>
+    <string name="word_sortby">Sort by</string>
+    <string name="word_upload">Upload</string>
 </resources>
