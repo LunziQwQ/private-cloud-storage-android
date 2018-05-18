@@ -5,9 +5,12 @@ import android.os.Bundle
 import android.support.design.widget.BottomNavigationView
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
+import android.widget.ArrayAdapter
+import android.widget.ListView
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
+
 
     private val mOnNavigationItemSelectedListener = BottomNavigationView.OnNavigationItemSelectedListener { item ->
         when (item.itemId) {
@@ -39,5 +42,12 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener)
+        val nameList = mutableListOf<String>()
+        var fileItemList = ApiUtils.get().getItemsWithoutLogin(ApiUtils.rootPath).forEach{ nameList.add(it.itemName)}
+        findViewById<ListView>(R.id.itemList).adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, nameList)
+    }
+
+    fun getItemList(path: String) {
+
     }
 }
