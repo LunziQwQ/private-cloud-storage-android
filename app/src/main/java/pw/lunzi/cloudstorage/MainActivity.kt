@@ -3,6 +3,7 @@ package pw.lunzi.cloudstorage
 import android.os.Bundle
 import android.support.design.widget.BottomNavigationView
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.ListView
@@ -21,6 +22,8 @@ class MainActivity : AppCompatActivity() {
             R.id.navigation_myspace -> {
                 if (!ApiUtils.isLogin) {
                     UiUtils.showNeedLoginAlert(this)
+                } else {
+                    showList(ApiUtils.rootPathUrl)
                 }
                 return@OnNavigationItemSelectedListener ApiUtils.isLogin
             }
@@ -46,11 +49,12 @@ class MainActivity : AppCompatActivity() {
     private fun showList(path: String) {
         Thread(Runnable {
             try {
-                val itemList = ApiUtils.get().getItemsWithoutLogin(path)
+                val itemList = ApiUtils.get().getItems(path)
                 val nameList = itemList.map { it.itemName }
                 runOnUiThread { findViewById<ListView>(R.id.itemList).adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, nameList) }
             } catch (e: ConnectException) {
                 runOnUiThread{ UiUtils.showNetworkError(this) }
+                Log.e("showListError", e.message)
             }
         }).start()
     }

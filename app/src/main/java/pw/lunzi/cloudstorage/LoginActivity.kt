@@ -49,7 +49,7 @@ class LoginActivity : AppCompatActivity() {
                 }
             } else {
                 runOnUiThread {
-                    UiUtils.showLoginSuccess(this)
+                    UiUtils.showLoginSuccess(this,this)
                 }
             }
         }).start()

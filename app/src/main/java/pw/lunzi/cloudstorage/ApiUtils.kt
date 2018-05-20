@@ -4,6 +4,7 @@ import android.util.Log
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
 import java.io.BufferedReader
+import java.io.InputStream
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
@@ -14,6 +15,7 @@ class ApiUtils private constructor() {
     companion object {
         var isLogin = false
         var session = ""
+        var userInfo: UserInfo? = null
 
         const val DOMAIN_ADDRESS = "http:/10.0.2.2:8080"
         const val rootPathUrl = "$DOMAIN_ADDRESS/api/items/root/"
@@ -28,7 +30,6 @@ class ApiUtils private constructor() {
         val instance = ApiUtils()
     }
 
-
     val mapper = ObjectMapper()
 
     private fun getFileItemListByJson(jsonStr: String): List<FileItem> {
@@ -36,10 +37,8 @@ class ApiUtils private constructor() {
         return mapper.readValue<ArrayList<FileItem>>(jsonStr, javaType)
     }
 
-    private fun sendGetRequest(path: String): String {
-        val connection = URL(path).openConnection() as HttpURLConnection
-        connection.requestMethod = "GET"
-        val br = BufferedReader(InputStreamReader(connection.inputStream))
+    private fun inputStreamToString(inputStream: InputStream): String {
+        val br = BufferedReader(InputStreamReader(inputStream))
         val sb = StringBuilder()
         while (true) {
             sb.append(br.readLine() ?: break).append("\n")
@@ -47,13 +46,14 @@ class ApiUtils private constructor() {
         return sb.toString()
     }
 
-    private fun sendPostRequest() {
 
-    }
-
-
-    fun getItemsWithoutLogin(path: String): List<FileItem> {
-        return getFileItemListByJson(sendGetRequest(path))
+    fun getItems(path: String): List<FileItem> {
+        val connection = URL(path).openConnection() as HttpURLConnection
+        connection.requestMethod = "GET"
+        if (isLogin) {
+            connection.setRequestProperty("Cookie",session.split(";")[0])
+        }
+        return getFileItemListByJson(inputStreamToString(connection.inputStream))
     }
 
     fun login(username: String, password: String): Boolean {
@@ -68,6 +68,7 @@ class ApiUtils private constructor() {
         if (responseCode == 200) {
             session = connection.getHeaderField("Set-Cookie")
             isLogin = true
+            userInfo = getUser(username)
         }
         return responseCode == 200
     }
