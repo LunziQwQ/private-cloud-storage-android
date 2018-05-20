@@ -6,7 +6,7 @@
     <string name="word_login">Login</string>
     <string name="word_username">Username</string>
     <string name="word_password">Password</string>
-    <string name="tips_username">Please check your username</string>
+    <string name="tips_username">The username does not exist</string>
     <string name="tips_password">Please check your password</string>
     <string name="word_register">Register</string>
     <string name="alert_login">Please login first</string>
@@ -15,4 +15,8 @@
     <string name="word_mkdir">Mkdir</string>
     <string name="word_sortby">Sort by</string>
     <string name="word_upload">Upload</string>
+    <string name="alert_nointernet">Can connect to server. Please check your network</string>
+    <string name="word_gotit">Got it</string>
+    <string name="tips_usernameempty">Username can not be empty</string>
+    <string name="tips_passwordempty">Password can not be empty</string>
 </resources>

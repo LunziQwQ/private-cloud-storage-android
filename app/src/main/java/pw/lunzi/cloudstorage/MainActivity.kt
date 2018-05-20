@@ -1,53 +1,59 @@
 package pw.lunzi.cloudstorage
 
-import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.BottomNavigationView
-import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
+import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import kotlinx.android.synthetic.main.activity_main.*
+import java.net.ConnectException
 
 class MainActivity : AppCompatActivity() {
 
+    private var path = ApiUtils.rootPathUrl
 
     private val mOnNavigationItemSelectedListener = BottomNavigationView.OnNavigationItemSelectedListener { item ->
         when (item.itemId) {
             R.id.navigation_common -> {
-//                message.setText(R.string.title_common)
                 return@OnNavigationItemSelectedListener true
             }
             R.id.navigation_myspace -> {
-                if(!LoginActivity.isLogin) {
-                    val builder = AlertDialog.Builder(this)
-                    builder.setTitle(getString(R.string.alert_login))
-                    builder.setPositiveButton(getString(R.string.word_login), { _, _ ->
-                        startActivity(Intent("Login"))
-                    })
-                    builder.setNegativeButton(getString(R.string.word_cancle), { _, _ -> })
-                    builder.create().show()
+                if (!ApiUtils.isLogin) {
+                    UiUtils.showNeedLoginAlert(this)
                 }
-                return@OnNavigationItemSelectedListener LoginActivity.isLogin
+                return@OnNavigationItemSelectedListener ApiUtils.isLogin
             }
             R.id.navigation_notifications -> {
-//                message.setText(R.string.title_notifications)
                 return@OnNavigationItemSelectedListener true
             }
         }
         false
     }
 
+    fun mkdirOnClick(view: View) {
+
+
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener)
-        val nameList = mutableListOf<String>()
-        var fileItemList = ApiUtils.get().getItemsWithoutLogin(ApiUtils.rootPath).forEach{ nameList.add(it.itemName)}
-        findViewById<ListView>(R.id.itemList).adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, nameList)
+        showList(path)
     }
 
-    fun getItemList(path: String) {
-
+    private fun showList(path: String) {
+        Thread(Runnable {
+            try {
+                val itemList = ApiUtils.get().getItemsWithoutLogin(path)
+                val nameList = itemList.map { it.itemName }
+                runOnUiThread { findViewById<ListView>(R.id.itemList).adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, nameList) }
+            } catch (e: ConnectException) {
+                runOnUiThread{ UiUtils.showNetworkError(this) }
+            }
+        }).start()
     }
+
+
 }
