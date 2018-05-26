@@ -18,9 +18,10 @@ class ApiUtils private constructor() {
         var userInfo: UserInfo? = null
 
         const val DOMAIN_ADDRESS = "http:/10.0.2.2:8080"
-        const val rootPathUrl = "$DOMAIN_ADDRESS/api/items/root/"
-        const val loginUrl = "$DOMAIN_ADDRESS/api/session"
-        const val getUserUrl = "$DOMAIN_ADDRESS/api/user/"
+        const val apiRootUrl = "$DOMAIN_ADDRESS/api"
+        const val loginUrl = "$apiRootUrl/session"
+        const val getUserUrl = "$apiRootUrl/user/"
+        const val itemUrl = "$apiRootUrl/item/"
         fun get(): ApiUtils {
             return Inner.instance
         }
@@ -47,11 +48,12 @@ class ApiUtils private constructor() {
     }
 
 
-    fun getItems(path: String): List<FileItem> {
+    fun getItemsByPath(path: String): List<FileItem> {
+        val path = getItemsURL(path)
         val connection = URL(path).openConnection() as HttpURLConnection
         connection.requestMethod = "GET"
         if (isLogin) {
-            connection.setRequestProperty("Cookie",session.split(";")[0])
+            connection.setRequestProperty("Cookie", session.split(";")[0])
         }
         return getFileItemListByJson(inputStreamToString(connection.inputStream))
     }
@@ -92,6 +94,23 @@ class ApiUtils private constructor() {
             }
             mapper.readValue<UserInfo>(sb.toString(), UserInfo::class.java)
         }
+    }
 
+    fun getItemsURL(path: String): String = "$apiRootUrl/items/$path"
+
+    fun getSuperPath(path: String): String {
+        val temp = path.substring(0, path.lastIndex - 1)
+        return temp.substring(0, temp.lastIndexOf("/") + 1)
+    }
+
+    fun mkdir(name: String, path: String): Boolean {
+        val url = "$itemUrl$path$name"
+        val connection = URL(url).openConnection() as HttpURLConnection
+        connection.requestMethod = "POST"
+        connection.setRequestProperty("Cookie", session.split(";")[0])
+        connection.connect()
+        val responseCode = connection.responseCode
+        Log.v("code:", responseCode.toString())
+        return responseCode == 200
     }
 }
