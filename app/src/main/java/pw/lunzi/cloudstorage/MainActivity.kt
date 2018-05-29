@@ -84,6 +84,9 @@ class MainActivity : AppCompatActivity() {
                 showList(temp)
                 setNowPath(temp)
             } else {
+                Thread(Runnable {
+                    utils.download(getNowPath(), itemList.get(position).itemName)
+                }).start()
                 Toast.makeText(this,"你单击的是第"+(position+1)+"条数据,非文件夹",Toast.LENGTH_SHORT).show()
             }
         })

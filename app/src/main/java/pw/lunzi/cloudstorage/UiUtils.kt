@@ -41,7 +41,7 @@ class UiUtils {
             builder.setPositiveButton(context.getString(R.string.word_gotit), { _, _ ->
                 activity.mkdir(editText.text.toString(), nowPath)
             })
-            builder.setNegativeButton(context.getString(R.string.word_gotit), { _, _ -> })
+            builder.setNegativeButton(context.getString(R.string.word_cancle), { _, _ -> })
             builder.create().show()
         }
     }

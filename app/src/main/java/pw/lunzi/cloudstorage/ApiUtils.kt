@@ -1,11 +1,10 @@
 package pw.lunzi.cloudstorage
 
+import android.os.Environment
 import android.util.Log
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
-import java.io.BufferedReader
-import java.io.InputStream
-import java.io.InputStreamReader
+import java.io.*
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -17,11 +16,12 @@ class ApiUtils private constructor() {
         var session = ""
         var userInfo: UserInfo? = null
 
-        const val DOMAIN_ADDRESS = "http:/10.0.2.2:8080"
+        const val DOMAIN_ADDRESS = "http:/192.168.0.114:8080"
         const val apiRootUrl = "$DOMAIN_ADDRESS/api"
         const val loginUrl = "$apiRootUrl/session"
         const val getUserUrl = "$apiRootUrl/user/"
         const val itemUrl = "$apiRootUrl/item/"
+        const val downloadUrl = "$apiRootUrl/file/"
         fun get(): ApiUtils {
             return Inner.instance
         }
@@ -110,7 +110,27 @@ class ApiUtils private constructor() {
         connection.setRequestProperty("Cookie", session.split(";")[0])
         connection.connect()
         val responseCode = connection.responseCode
-        Log.v("code:", responseCode.toString())
+        Log.i("code:", responseCode.toString())
         return responseCode == 200
+    }
+
+    fun download(path: String, name: String) {
+        val url = "$downloadUrl$path$name"
+        Log.i("download URL : ", url)
+        val savePath = Environment.getDownloadCacheDirectory().absolutePath
+        val connection = URL(url).openConnection() as HttpURLConnection
+        File(savePath).mkdir()
+        val saveFile = File("$savePath/$name")
+        Log.i("savePath : ", "$savePath/$name")
+        saveFile.mkdirs()
+        saveFile.createNewFile()
+        val inputStream = connection.inputStream
+        val outputStream = FileOutputStream(saveFile)
+        val buffer = ByteArray(4 * 1024)
+        while(inputStream.read(buffer)!=-1){
+            outputStream.write(buffer)
+        }
+        outputStream.flush()
+        outputStream.close()
     }
 }
