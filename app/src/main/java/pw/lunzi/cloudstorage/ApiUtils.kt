@@ -1,5 +1,6 @@
 package pw.lunzi.cloudstorage
 
+import android.content.Context
 import android.os.Environment
 import android.util.Log
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -7,6 +8,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import java.io.*
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.*
+
+
 
 
 class ApiUtils private constructor() {
@@ -16,12 +20,12 @@ class ApiUtils private constructor() {
         var session = ""
         var userInfo: UserInfo? = null
 
-        const val DOMAIN_ADDRESS = "http:/192.168.0.114:8080"
+        const val DOMAIN_ADDRESS = "http://192.168.0.114:8080"
         const val apiRootUrl = "$DOMAIN_ADDRESS/api"
         const val loginUrl = "$apiRootUrl/session"
         const val getUserUrl = "$apiRootUrl/user/"
         const val itemUrl = "$apiRootUrl/item/"
-        const val downloadUrl = "$apiRootUrl/file/"
+        const val fileLoadUrl = "$apiRootUrl/file/"
         fun get(): ApiUtils {
             return Inner.instance
         }
@@ -115,14 +119,14 @@ class ApiUtils private constructor() {
     }
 
     fun download(path: String, name: String) {
-        val url = "$downloadUrl$path$name"
+        val url = "$fileLoadUrl$path$name"
         Log.i("download URL : ", url)
-        val savePath = Environment.getDownloadCacheDirectory().absolutePath
+        val savePath = Environment.getExternalStorageDirectory().absolutePath+"/cloudStorage"
         val connection = URL(url).openConnection() as HttpURLConnection
+        if (isLogin) connection.setRequestProperty("Cookie", session.split(";")[0])
         File(savePath).mkdir()
         val saveFile = File("$savePath/$name")
         Log.i("savePath : ", "$savePath/$name")
-        saveFile.mkdirs()
         saveFile.createNewFile()
         val inputStream = connection.inputStream
         val outputStream = FileOutputStream(saveFile)
@@ -132,5 +136,56 @@ class ApiUtils private constructor() {
         }
         outputStream.flush()
         outputStream.close()
+    }
+
+    fun upload(vpath: String, path: String, context: Context) {
+        val url = "$fileLoadUrl$vpath"
+        Log.e("path",url)
+        val connection = URL(url).openConnection() as HttpURLConnection
+        connection.doOutput = true
+        connection.doInput = true
+        connection.requestMethod = "POST"
+        // create random boundary
+        val PREFIX = "--"
+        val LINE_END = "\r\n"
+        val boundary = UUID.randomUUID().toString()
+        val file = File(path)
+
+        connection.setRequestProperty("Cookie", session.split(";")[0])
+        connection.setRequestProperty("Connection", "Keep-Alive")
+        connection.setRequestProperty("Content-Type", "multipart/form-data;boundary=$boundary")
+        connection.setRequestProperty("Cache-Control", "no-cache")
+        val fis = FileInputStream(file)
+        val os = connection.outputStream
+        val sb = StringBuilder().append(PREFIX).append(boundary).append(LINE_END)
+        sb.append("Content-Disposition: form-data; name=\"testname\"; filename=\""+file.name +"\""+LINE_END)
+        sb.append("Content-Type: application/octet-stream; charset=utf-8$LINE_END")
+        sb.append(LINE_END)
+        os.write(sb.toString().toByteArray())
+        val bytes = ByteArray(1024)
+        var len = 0
+        while (true) {
+            len = fis.read(bytes)
+            if(len == -1) break
+            os.write(bytes, 0, len)
+        }
+        fis.close()
+        os.write(LINE_END.toByteArray())
+        val endData = (PREFIX + boundary + PREFIX + LINE_END).toByteArray()
+        os.write(endData)
+        os.flush()
+
+        val res = connection.responseCode
+        Log.e("code", "response code:$res")
+        val input = connection.inputStream
+        val sb1 = StringBuffer()
+        var ss: Int
+        while (true) {
+            ss = input.read()
+            if(ss == -1) break
+            sb1.append(ss.toChar())
+        }
+        val result = sb1.toString()
+        Log.e("result", "result : $result")
     }
 }

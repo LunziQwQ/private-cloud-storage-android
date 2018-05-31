@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
+import android.widget.Button
 import android.widget.EditText
 import android.widget.PopupWindow
 
@@ -43,6 +44,15 @@ class UiUtils {
             })
             builder.setNegativeButton(context.getString(R.string.word_cancle), { _, _ -> })
             builder.create().show()
+        }
+
+        fun canMkdirAndUpload(isEnable: Boolean, activity: MainActivity) {
+            activity.findViewById<Button>(R.id.btn_mkdir).isEnabled = isEnable
+            activity.findViewById<Button>(R.id.btn_mkdir).alpha = if (isEnable) 1F else 0.3F
+            activity.findViewById<Button>(R.id.btn_upload).isEnabled = isEnable
+            activity.findViewById<Button>(R.id.btn_upload).alpha = if (isEnable) 1F else 0.3F
+
+
         }
     }
 }
