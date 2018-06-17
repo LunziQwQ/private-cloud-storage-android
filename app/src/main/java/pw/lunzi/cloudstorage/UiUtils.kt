@@ -2,6 +2,7 @@ package pw.lunzi.cloudstorage
 
 import android.content.Context
 import android.content.Intent
+import android.support.design.internal.BottomNavigationItemView
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.widget.Button
@@ -17,13 +18,15 @@ class UiUtils {
             builder.create().show()
         }
 
-        fun showNeedLoginAlert(context: Context){
+        fun showNeedLoginAlert(context: Context, activity: MainActivity) {
             val builder = AlertDialog.Builder(context)
             builder.setTitle(context.getString(R.string.alert_login))
             builder.setPositiveButton(context.getString(R.string.word_login), { _, _ ->
                 context.startActivity(Intent("Login"))
             })
-            builder.setNegativeButton(context.getString(R.string.word_cancle), { _, _ -> })
+            builder.setNegativeButton(context.getString(R.string.word_cancle), { _, _ ->
+                activity.findViewById<BottomNavigationItemView>(R.id.navigation_common).performClick()
+            })
             builder.create().show()
         }
 
@@ -44,15 +47,6 @@ class UiUtils {
             })
             builder.setNegativeButton(context.getString(R.string.word_cancle), { _, _ -> })
             builder.create().show()
-        }
-
-        fun canMkdirAndUpload(isEnable: Boolean, activity: MainActivity) {
-            activity.findViewById<Button>(R.id.btn_mkdir).isEnabled = isEnable
-            activity.findViewById<Button>(R.id.btn_mkdir).alpha = if (isEnable) 1F else 0.3F
-            activity.findViewById<Button>(R.id.btn_upload).isEnabled = isEnable
-            activity.findViewById<Button>(R.id.btn_upload).alpha = if (isEnable) 1F else 0.3F
-
-
         }
     }
 }

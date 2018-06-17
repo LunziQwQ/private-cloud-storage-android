@@ -16,46 +16,61 @@ import android.os.Build
 import android.support.annotation.RequiresApi
 import android.content.Intent
 import android.app.Activity
-import android.net.Uri
+import android.support.design.internal.BottomNavigationItemView
+import android.support.v4.view.ViewPager
+import android.view.animation.AnticipateInterpolator
+import android.widget.SimpleAdapter
 
 
 @Suppress("DEPRECATED_IDENTITY_EQUALS")
 class MainActivity : AppCompatActivity() {
 
-    private var commonPath = "root/"
-    private var myPath = ""
-    private val utils = ApiUtils.get()
-    private var itemList = listOf<FileItem>()
-    private var nowNavigation = 0 // 0 1 2 对应三个navigation
+    //ViewPager 实例，实现底部导航栏切换页面
+    private var pager: ViewPager? = null
 
-    private fun getNowPath() = if (nowNavigation == 0) commonPath else myPath
+    //common页面的当前路径缓存
+    private var commonPath = "root/"
+
+    //mySpace页面的当前路径
+    private var myPath = ""
+
+    //Api工具类实例化
+    private val utils = ApiUtils.get()
+
+    //根据pager编号处理不同页面的Path
+    private fun getNowPath() = if (pager!!.currentItem == 0) commonPath else myPath
     private fun setNowPath(path: String) {
-        if (nowNavigation == 0) commonPath = path else myPath = path
+        if (pager!!.currentItem == 0) commonPath = path else myPath = path
     }
 
 
     private val mOnNavigationItemSelectedListener = BottomNavigationView.OnNavigationItemSelectedListener { item ->
         when (item.itemId) {
             R.id.navigation_common -> {
-                nowNavigation = 0
-                showList(commonPath)
-                UiUtils.canMkdirAndUpload(false, this)
+                pager!!.currentItem = 0
+                showCommonList(commonPath)
                 return@OnNavigationItemSelectedListener true
             }
             R.id.navigation_myspace -> {
-                nowNavigation = 1
                 if (!ApiUtils.isLogin) {
-                    UiUtils.showNeedLoginAlert(this)
+                    UiUtils.showNeedLoginAlert(this, this)
+                    findViewById<BottomNavigationItemView>(R.id.navigation_common).performClick()
                 } else {
-                    UiUtils.canMkdirAndUpload(true, this)
+                    pager!!.currentItem = 1
                     if (myPath == "") myPath = ApiUtils.userInfo!!.username + "/"
-                    showList(myPath)
+                    showMyList(myPath)
                 }
                 return@OnNavigationItemSelectedListener ApiUtils.isLogin
             }
-            R.id.navigation_notifications -> {
-                nowNavigation = 2
-                return@OnNavigationItemSelectedListener true
+            R.id.navigation_me -> {
+                if (!ApiUtils.isLogin) {
+                    UiUtils.showNeedLoginAlert(this, this)
+                    findViewById<BottomNavigationItemView>(R.id.navigation_common).performClick()
+                } else {
+                    pager!!.currentItem = 2
+                    //Todo()
+                }
+                return@OnNavigationItemSelectedListener ApiUtils.isLogin
             }
         }
         false
@@ -69,7 +84,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        var path = ""
+        var path: String
         if (resultCode === Activity.RESULT_OK) {
             val uri = data!!.data
             Log.v("uri", uri.toString())
@@ -95,7 +110,7 @@ class MainActivity : AppCompatActivity() {
         if (ApiUtils.isLogin) {
             UiUtils.showEditAlert(this, getNowPath(), this)
         } else {
-            UiUtils.showNeedLoginAlert(this)
+            UiUtils.showNeedLoginAlert(this, this)
         }
     }
 
@@ -103,7 +118,7 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, "${ApiUtils.itemUrl}$path$name", Toast.LENGTH_SHORT).show()
         Thread(Runnable {
             if (utils.mkdir(name, path)) {
-                showList(getNowPath())
+                showMyList(getNowPath())
             } else {
                 runOnUiThread {
                     Toast.makeText(this, "Failed", Toast.LENGTH_SHORT).show()
@@ -116,11 +131,31 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener)
+
+
+        //初始化ViewPager
+        pager = findViewById(R.id.view_pager)
+        pager!!.adapter = MyPagerAdapter(supportFragmentManager)
+        pager!!.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
+            override fun onPageScrollStateChanged(state: Int) {}
+            override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {}
+            override fun onPageSelected(position: Int) {
+                when (position) {
+                    0 -> findViewById<BottomNavigationItemView>(R.id.navigation_common).performClick()
+                    1 -> findViewById<BottomNavigationItemView>(R.id.navigation_myspace).performClick()
+                    2 -> findViewById<BottomNavigationItemView>(R.id.navigation_me).performClick()
+                }
+            }
+        })
+/*
+
+
+
+        */
         //询问文件读写权限
         if (Build.VERSION.SDK_INT >= 23) {
             val REQUEST_CODE_CONTACT = 101
-            val permissions = arrayOf<String>(android.Manifest.permission.WRITE_EXTERNAL_STORAGE, android.Manifest.permission.READ_EXTERNAL_STORAGE)
+            val permissions = arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE, android.Manifest.permission.READ_EXTERNAL_STORAGE)
             //验证是否许可权限
             for (str in permissions) {
                 if (this.checkSelfPermission(str) != PackageManager.PERMISSION_GRANTED) {
@@ -130,33 +165,89 @@ class MainActivity : AppCompatActivity() {
             }
         }
         //更新按钮状态
-        UiUtils.canMkdirAndUpload(false, this)
-
-        //列表子项点击事件
-        findViewById<ListView>(R.id.itemList).setOnItemClickListener({ parent, view, position, id ->
-            if (itemList.get(position).isDictionary) {
-                var temp = getNowPath()
-                temp += "${itemList.get(position).itemName}/"
-                showList(temp)
-                setNowPath(temp)
-            } else {
-                Thread(Runnable {
-                    utils.download(getNowPath(), itemList.get(position).itemName)
-                }).start()
-                Toast.makeText(this, "你单击的是第" + (position + 1) + "条数据,非文件夹", Toast.LENGTH_SHORT).show()
-            }
-        })
-
-        showList(if (nowNavigation == 0) commonPath else myPath)
+//        UiUtils.canMkdirAndUpload(false, this)
+        showCommonList(commonPath)
+        //初始化导航栏
+        navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener)
     }
 
-    private fun showList(path: String) {
+    private fun showCommonList(path: String) {
         Thread(Runnable {
             try {
                 Log.v("path:", path)
-                itemList = utils.getItemsByPath(path)
-                val nameList = itemList.map { it.itemName }
-                runOnUiThread { findViewById<ListView>(R.id.itemList).adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, nameList) }
+                val tempList = mutableListOf<Map<String, Any>>()
+                FileItem.commonFileItemList = utils.getItemsByPath(path)
+                FileItem.commonFileItemList.forEach {
+                    tempList.add(mapOf(
+                            "item_image" to if (it.isDictionary) R.drawable.folder_32 else R.drawable.documents_32,
+                            "item_title" to it.itemName,
+                            "item_size" to Utils.getSizeString(it.size)
+                    ))
+                }
+                FileItem.commonItemList = tempList
+                runOnUiThread {
+                    findViewById<ListView>(R.id.commonItemList).adapter = SimpleAdapter(
+                            this,
+                            FileItem.commonItemList, R.layout.list_items,
+                            arrayOf("item_image", "item_title", "item_size"),
+                            intArrayOf(R.id.item_image, R.id.item_title, R.id.item_size)
+                    )
+                    findViewById<ListView>(R.id.commonItemList).setOnItemClickListener({ parent, view, position, id ->
+                        if (FileItem.commonFileItemList[position].isDictionary) {
+                            var temp = getNowPath()
+                            temp += "${FileItem.commonFileItemList[position].itemName}/"
+                            showCommonList(temp)
+                            setNowPath(temp)
+                        } else {
+                            Thread(Runnable {
+                                utils.download(getNowPath(), FileItem.commonFileItemList[position].itemName)
+                            }).start()
+                            Toast.makeText(this, "成功开始下载至/cloudStorage", Toast.LENGTH_SHORT).show()
+                        }
+                    })
+                }
+            } catch (e: ConnectException) {
+                runOnUiThread { UiUtils.showNetworkError(this) }
+                Log.e("showListError", e.message)
+            }
+        }).start()
+    }
+
+    private fun showMyList(path: String) {
+        Thread(Runnable {
+            try {
+                Log.v("path:", path)
+                val tempList = mutableListOf<Map<String, Any>>()
+                FileItem.myFileItemList = utils.getItemsByPath(path)
+                FileItem.myFileItemList.forEach{
+                    tempList.add(mapOf(
+                            "item_image" to if (it.isDictionary) R.drawable.folder_32 else R.drawable.documents_32,
+                            "item_title" to it.itemName,
+                            "item_size" to Utils.getSizeString(it.size)
+                    ))
+                }
+                FileItem.myItemList = tempList
+                runOnUiThread {
+                    findViewById<ListView>(R.id.myItemList).adapter = SimpleAdapter(
+                            this,
+                            FileItem.myItemList, R.layout.list_items,
+                            arrayOf("item_image", "item_title", "item_size"),
+                            intArrayOf(R.id.item_image, R.id.item_title, R.id.item_size)
+                    )
+                    findViewById<ListView>(R.id.myItemList).setOnItemClickListener({ parent, view, position, id ->
+                        if (FileItem.myFileItemList[position].isDictionary) {
+                            var temp = getNowPath()
+                            temp += "${FileItem.myFileItemList[position].itemName}/"
+                            showMyList(temp)
+                            setNowPath(temp)
+                        } else {
+                            Thread(Runnable {
+                                utils.download(getNowPath(), FileItem.myFileItemList[position].itemName)
+                            }).start()
+                            Toast.makeText(this, "成功开始下载至/cloudStorage", Toast.LENGTH_SHORT).show()
+                        }
+                    })
+                }
             } catch (e: ConnectException) {
                 runOnUiThread { UiUtils.showNetworkError(this) }
                 Log.e("showListError", e.message)
@@ -169,14 +260,17 @@ class MainActivity : AppCompatActivity() {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             var temp = getNowPath()
             temp = utils.getSuperPath(temp)
-            return if (temp == "/") false
+            return if (temp == "") super.onKeyUp(keyCode, event)
             else {
-                showList(temp)
+                when (pager!!.currentItem) {
+                    0 -> showCommonList(temp)
+                    1 -> showMyList(temp)
+                    2 -> return false
+                }
                 setNowPath(temp)
                 true
             }
         }
         return super.onKeyUp(keyCode, event)
     }
-
 }

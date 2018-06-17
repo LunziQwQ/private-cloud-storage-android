@@ -2,7 +2,7 @@
     <string name="app_name">CloudStorage</string>
     <string name="title_common">Common</string>
     <string name="title_my_space">My Space</string>
-    <string name="title_notifications">Notifications</string>
+    <string name="title_me">Me</string>
     <string name="word_login">Login</string>
     <string name="word_username">Username</string>
     <string name="word_password">Password</string>

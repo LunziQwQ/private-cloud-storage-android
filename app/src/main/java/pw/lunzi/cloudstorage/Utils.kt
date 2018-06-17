@@ -1,6 +1,5 @@
 package pw.lunzi.cloudstorage
 
-
 import android.annotation.SuppressLint
 import android.content.ContentUris
 import android.content.Context
@@ -10,6 +9,21 @@ import android.os.Build
 import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.MediaStore
+
+class Utils {
+    companion object {
+        fun getSizeString(size: Int): String {
+            val unit = listOf("B", "KB", "MB", "GB", "TB")
+            var index = 0
+            var temp: Double = size.toDouble()
+            while (temp / 1000 > 1) {
+                temp /= 1000
+                index++
+            }
+            return "${String.format("%.2f", temp)}${unit[index]}"
+        }
+    }
+}
 
 
 object UriToPath {

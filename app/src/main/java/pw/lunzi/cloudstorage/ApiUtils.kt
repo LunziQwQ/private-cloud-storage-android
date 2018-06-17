@@ -119,7 +119,7 @@ class ApiUtils private constructor() {
     }
 
     fun download(path: String, name: String) {
-        val url = "$fileLoadUrl$path$name"
+        val url = "$fileLoadUrl$path$name".replace(" ", "%20")
         Log.i("download URL : ", url)
         val savePath = Environment.getExternalStorageDirectory().absolutePath+"/cloudStorage"
         val connection = URL(url).openConnection() as HttpURLConnection
@@ -130,12 +130,23 @@ class ApiUtils private constructor() {
         saveFile.createNewFile()
         val inputStream = connection.inputStream
         val outputStream = FileOutputStream(saveFile)
-        val buffer = ByteArray(4 * 1024)
-        while(inputStream.read(buffer)!=-1){
-            outputStream.write(buffer)
-        }
+        val buffer = readInputStream(inputStream)
+        outputStream.write(buffer)
         outputStream.flush()
         outputStream.close()
+    }
+
+    fun readInputStream(inputStream: InputStream): ByteArray {
+        val buffer = ByteArray(1024)
+        var len = 0
+        val bos = ByteArrayOutputStream()
+        while (true) {
+            val len = inputStream.read(buffer)
+            if(len == -1) break
+            bos.write(buffer, 0, len)
+        }
+        bos.close()
+        return bos.toByteArray()
     }
 
     fun upload(vpath: String, path: String, context: Context) {
@@ -152,14 +163,16 @@ class ApiUtils private constructor() {
         val file = File(path)
 
         connection.setRequestProperty("Cookie", session.split(";")[0])
-        connection.setRequestProperty("Connection", "Keep-Alive")
+        connection.setRequestProperty("Connection", "keep-alive")
         connection.setRequestProperty("Content-Type", "multipart/form-data;boundary=$boundary")
         connection.setRequestProperty("Cache-Control", "no-cache")
+        connection.setRequestProperty("Charset","utf-8")
         val fis = FileInputStream(file)
         val os = connection.outputStream
         val sb = StringBuilder().append(PREFIX).append(boundary).append(LINE_END)
-        sb.append("Content-Disposition: form-data; name=\"testname\"; filename=\""+file.name +"\""+LINE_END)
-        sb.append("Content-Type: application/octet-stream; charset=utf-8$LINE_END")
+        sb.append("Content-Disposition: form-data; name=\"file\"; filename=\""+file.name +"\""+LINE_END)
+        sb.append("Content-Type: application/octet-stream$LINE_END")
+        sb.append("Content-Transfer-Encoding:binary$LINE_END")
         sb.append(LINE_END)
         os.write(sb.toString().toByteArray())
         val bytes = ByteArray(1024)
@@ -177,15 +190,17 @@ class ApiUtils private constructor() {
 
         val res = connection.responseCode
         Log.e("code", "response code:$res")
-        val input = connection.inputStream
-        val sb1 = StringBuffer()
-        var ss: Int
-        while (true) {
-            ss = input.read()
-            if(ss == -1) break
-            sb1.append(ss.toChar())
+        if (res == 200) {
+            val input = connection.inputStream
+            val sb1 = StringBuffer()
+            var ss: Int
+            while (true) {
+                ss = input.read()
+                if(ss == -1) break
+                sb1.append(ss.toChar())
+            }
+            val result = sb1.toString()
+            Log.e("result", "result : $result")
         }
-        val result = sb1.toString()
-        Log.e("result", "result : $result")
     }
 }
