@@ -142,6 +142,22 @@ class ApiUtils private constructor() {
         return responseCode == 200
     }
 
+    fun changeItemAccess(path: String, name: String, allRecursion: Boolean, isPublic: Boolean): Boolean {
+        val url = "$itemUrl$path$name/access"
+        val connection = URL(url).openConnection() as HttpURLConnection
+        connection.requestMethod = "PUT"
+        connection.setRequestProperty("Content-Type", "application/json")
+        connection.setRequestProperty("Cookie", session.split(";")[0])
+        connection.doOutput = true
+        val outputStream = connection.outputStream
+        outputStream.write("{\"isPublic\":$isPublic,\"allowRecursion\":$allRecursion}".toByteArray())
+        outputStream.flush()
+        outputStream.close()
+        val responseCode = connection.responseCode
+        Log.v("Change Acccess ------>", responseCode.toString())
+        return responseCode == 200
+    }
+
     fun getItemsURL(path: String): String = "$apiRootUrl/items/$path"
 
     fun getSuperPath(path: String): String {

@@ -7,8 +7,10 @@ import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.PopupWindow
+import java.security.cert.CertPath
 
 class UiUtils {
     companion object {
@@ -57,6 +59,19 @@ class UiUtils {
             builder.setView(editText)
             builder.setPositiveButton(context.getString(R.string.word_gotit)) { _, _ ->
                 activity.mkdir(editText.text.toString(), nowPath)
+            }
+            builder.setNegativeButton(context.getString(R.string.word_cancle), { _, _ -> })
+            builder.create().show()
+        }
+
+        fun showChangeAccessAlert(context: Context, activity: MainActivity, path: String, name: String, ispublic: Boolean) {
+            val builder = AlertDialog.Builder(context)
+            builder.setTitle("更改文件夹权限")
+            val checkBox = CheckBox(context)
+            checkBox.text= "递归更改所有子文件"
+            builder.setView(checkBox)
+            builder.setPositiveButton(context.getString(R.string.word_gotit)) { _, _ ->
+                activity.changeItemAccess(path, name, checkBox.isChecked, ispublic)
             }
             builder.setNegativeButton(context.getString(R.string.word_cancle), { _, _ -> })
             builder.create().show()

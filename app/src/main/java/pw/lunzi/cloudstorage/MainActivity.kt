@@ -19,6 +19,7 @@ import android.support.v4.view.ViewPager
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.*
+import java.nio.file.attribute.PosixFileAttributeView
 
 
 @Suppress("DEPRECATED_IDENTITY_EQUALS")
@@ -284,6 +285,7 @@ class MainActivity : AppCompatActivity() {
                             val downloadBtn = view.findViewById<Button>(R.id.btn_download)
                             val deleteBtn = view.findViewById<Button>(R.id.btn_delete)
                             val renameBtn = view.findViewById<Button>(R.id.btn_rename)
+                            val changeAccessBtn = view.findViewById<Button>(R.id.btn_change_access)
 
                             titleView.setOnClickListener {
                                 if (FileItem.myFileItemList[position].isDictionary) {
@@ -322,8 +324,16 @@ class MainActivity : AppCompatActivity() {
                                 }).start()
                             }
 
-                            renameBtn.setOnClickListener{
+                            renameBtn.setOnClickListener {
                                 UiUtils.showRenameAlert(this@MainActivity, getNowPath(), FileItem.myFileItemList[position].itemName, this@MainActivity)
+                            }
+
+                            changeAccessBtn.setOnClickListener {
+                                if (FileItem.myFileItemList[position].isDictionary) {
+                                    UiUtils.showChangeAccessAlert(this@MainActivity, this@MainActivity, getNowPath(), FileItem.myFileItemList[position].itemName, !FileItem.myFileItemList[position].isPublic)
+                                } else {
+                                    changeItemAccess(getNowPath(), FileItem.myFileItemList[position].itemName, false, !FileItem.myFileItemList[position].isPublic)
+                                }
                             }
 
                             imgView.setImageResource(FileItem.myItemList[position]["item_image"] as Int)
@@ -354,8 +364,18 @@ class MainActivity : AppCompatActivity() {
 
     fun renameItem(newName: String, path: String, oldName: String) {
         Thread(Runnable {
-            if(utils.renameItem(newName, path, oldName)){
-                runOnUiThread{
+            if (utils.renameItem(newName, path, oldName)) {
+                runOnUiThread {
+                    showMyList(getNowPath())
+                }
+            }
+        }).start()
+    }
+
+    fun changeItemAccess(path: String, name: String, allRecursion: Boolean, isPublic: Boolean) {
+        Thread(Runnable {
+            if (utils.changeItemAccess(path, name, allRecursion, isPublic)) {
+                runOnUiThread {
                     showMyList(getNowPath())
                 }
             }
