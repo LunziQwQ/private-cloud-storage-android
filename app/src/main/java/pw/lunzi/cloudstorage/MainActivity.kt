@@ -40,7 +40,13 @@ class MainActivity : AppCompatActivity() {
     fun getNowPath() = if (pager!!.currentItem == 0) commonPath else myPath
 
     fun setNowPath(path: String) {
-        if (pager!!.currentItem == 0) commonPath = path else myPath = path
+        if (pager!!.currentItem == 0) {
+            commonPath = path
+            findViewById<TextView>(R.id.textView_commonPath).text = path
+        } else {
+            myPath = path
+            findViewById<TextView>(R.id.textView_myPath).text = path
+        }
     }
 
 
@@ -57,7 +63,7 @@ class MainActivity : AppCompatActivity() {
                     findViewById<BottomNavigationItemView>(R.id.navigation_common).performClick()
                 } else {
                     pager!!.currentItem = 1
-                    if (myPath == "") myPath = ApiUtils.userInfo!!.username + "/"
+                    if (myPath == "") setNowPath(ApiUtils.userInfo!!.username + "/")
                     showMyList(myPath)
                 }
                 return@OnNavigationItemSelectedListener ApiUtils.isLogin
@@ -105,6 +111,9 @@ class MainActivity : AppCompatActivity() {
                     path = UriToPath.getPath(this, uri)!!
                     Thread(Runnable {
                         utils.upload(getNowPath(), path, this)
+                        runOnUiThread {
+                            showMyList(getNowPath())
+                        }
                     }).start()
                 }
             } catch (e: Exception) {
@@ -154,11 +163,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
-/*
 
-
-
-        */
         //询问文件读写权限
         if (Build.VERSION.SDK_INT >= 23) {
             val REQUEST_CODE_CONTACT = 101
@@ -277,6 +282,8 @@ class MainActivity : AppCompatActivity() {
                             val sizeView = view.findViewById<TextView>(R.id.item_size)
 
                             val downloadBtn = view.findViewById<Button>(R.id.btn_download)
+                            val deleteBtn = view.findViewById<Button>(R.id.btn_delete)
+                            val renameBtn = view.findViewById<Button>(R.id.btn_rename)
 
                             titleView.setOnClickListener {
                                 if (FileItem.myFileItemList[position].isDictionary) {
@@ -299,13 +306,24 @@ class MainActivity : AppCompatActivity() {
                             downloadBtn.setOnClickListener {
                                 if (!FileItem.myFileItemList[position].isDictionary) {
                                     Thread(Runnable {
-                                        ApiUtils.get().download(getNowPath(), FileItem.myFileItemList[position].itemName)
+                                        utils.download(getNowPath(), FileItem.myFileItemList[position].itemName)
                                     }).start()
                                     Toast.makeText(view.context, "成功开始下载 ${FileItem.myFileItemList[position].itemName} 至/cloudStorage", Toast.LENGTH_SHORT).show()
 
                                 } else {
                                     Toast.makeText(view.context, "暂时不支持下载文件夹", Toast.LENGTH_SHORT).show()
                                 }
+                            }
+
+                            deleteBtn.setOnClickListener {
+                                Thread(Runnable {
+                                    utils.deleteItem(getNowPath(), FileItem.myFileItemList[position].itemName)
+                                    showMyList(getNowPath())
+                                }).start()
+                            }
+
+                            renameBtn.setOnClickListener{
+                                UiUtils.showRenameAlert(this@MainActivity, getNowPath(), FileItem.myFileItemList[position].itemName, this@MainActivity)
                             }
 
                             imgView.setImageResource(FileItem.myItemList[position]["item_image"] as Int)
@@ -330,6 +348,16 @@ class MainActivity : AppCompatActivity() {
             } catch (e: ConnectException) {
                 runOnUiThread { UiUtils.showNetworkError(this) }
                 Log.e("showListError", e.message)
+            }
+        }).start()
+    }
+
+    fun renameItem(newName: String, path: String, oldName: String) {
+        Thread(Runnable {
+            if(utils.renameItem(newName, path, oldName)){
+                runOnUiThread{
+                    showMyList(getNowPath())
+                }
             }
         }).start()
     }

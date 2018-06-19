@@ -39,22 +39,23 @@
                 android:text="@string/word_upload"
                 android:textColor="@color/colorDarkGrey" />
 
-            <Button
-                android:id="@+id/btn_sortby"
-                style="?android:attr/buttonBarButtonStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/word_sortby"
-                android:textColor="@color/colorDarkGrey" />
-
         </LinearLayout>
+
+        <TextView
+            android:id="@+id/textView_myPath"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="2dp"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp"
+            android:paddingTop="2dp"
+            android:text="Path"
+            android:textSize="15dp" />
 
         <ListView
             android:id="@+id/myItemList"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="1"
             tools:layout_editor_absoluteY="52dp" />
     </LinearLayout>
 

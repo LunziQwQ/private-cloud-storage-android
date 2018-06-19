@@ -20,7 +20,7 @@ class ApiUtils private constructor() {
         var session = ""
         var userInfo: UserInfo? = null
 
-        const val DOMAIN_ADDRESS = "http://192.168.0.114:8080"
+        const val DOMAIN_ADDRESS = "http://192.168.0.185:9000"
         const val apiRootUrl = "$DOMAIN_ADDRESS/api"
         const val loginUrl = "$apiRootUrl/session"
         const val userUrl = "$apiRootUrl/user/"
@@ -70,6 +70,7 @@ class ApiUtils private constructor() {
         val outputStream = connection.outputStream
         outputStream.write("{\"password\":\"$password\"}".toByteArray())
         val responseCode = connection.responseCode
+        outputStream.close()
         return responseCode == 200
     }
 
@@ -87,6 +88,24 @@ class ApiUtils private constructor() {
             isLogin = true
             userInfo = getUser(username)
         }
+        outputStream.close()
+        return responseCode == 200
+    }
+
+    fun renameItem(newName: String, path: String, oldName: String): Boolean {
+        val url = "$itemUrl$path$oldName/name"
+        Log.v("RenameURL ---->",url)
+        val connection = URL(url).openConnection() as HttpURLConnection
+        connection.requestMethod = "PUT"
+        connection.setRequestProperty("Content-Type", "application/json")
+        connection.setRequestProperty("Cookie", session.split(";")[0])
+        connection.doOutput = true
+        val outputStream = connection.outputStream
+        outputStream.write("{\"newName\":\"$newName\"}".toByteArray())
+        outputStream.flush()
+        outputStream.close()
+        val responseCode = connection.responseCode
+        Log.v("Rename ------>",responseCode.toString())
         return responseCode == 200
     }
 
@@ -112,6 +131,17 @@ class ApiUtils private constructor() {
         }
     }
 
+    fun deleteItem(path: String, name: String): Boolean {
+        val url = "$itemUrl$path$name"
+        val connection = URL(url).openConnection() as HttpURLConnection
+        connection.setRequestProperty("Content-Type", "application/json")
+        connection.setRequestProperty("Cookie", session.split(";")[0])
+        connection.requestMethod = "DELETE"
+        val responseCode = connection.responseCode
+        Log.v("code:--------->", responseCode.toString())
+        return responseCode == 200
+    }
+
     fun getItemsURL(path: String): String = "$apiRootUrl/items/$path"
 
     fun getSuperPath(path: String): String {
@@ -124,7 +154,6 @@ class ApiUtils private constructor() {
         val connection = URL(url).openConnection() as HttpURLConnection
         connection.requestMethod = "POST"
         connection.setRequestProperty("Cookie", session.split(";")[0])
-        connection.connect()
         val responseCode = connection.responseCode
         Log.i("code:", responseCode.toString())
         return responseCode == 200
@@ -198,6 +227,7 @@ class ApiUtils private constructor() {
         val endData = (PREFIX + boundary + PREFIX + LINE_END).toByteArray()
         os.write(endData)
         os.flush()
+        os.close()
 
         val res = connection.responseCode
         Log.e("code", "response code:$res")
