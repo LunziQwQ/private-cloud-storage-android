@@ -1,5 +1,6 @@
 package pw.lunzi.cloudstorage
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.support.design.widget.BottomNavigationView
 import android.support.v7.app.AppCompatActivity
@@ -15,6 +16,8 @@ import android.content.Intent
 import android.app.Activity
 import android.support.design.internal.BottomNavigationItemView
 import android.support.v4.view.ViewPager
+import android.view.LayoutInflater
+import android.view.ViewGroup
 import android.widget.*
 
 
@@ -34,8 +37,9 @@ class MainActivity : AppCompatActivity() {
     private val utils = ApiUtils.get()
 
     //根据pager编号处理不同页面的Path
-    private fun getNowPath() = if (pager!!.currentItem == 0) commonPath else myPath
-    private fun setNowPath(path: String) {
+    fun getNowPath() = if (pager!!.currentItem == 0) commonPath else myPath
+
+    fun setNowPath(path: String) {
         if (pager!!.currentItem == 0) commonPath = path else myPath = path
     }
 
@@ -189,25 +193,57 @@ class MainActivity : AppCompatActivity() {
                 }
                 FileItem.commonItemList = tempList
                 runOnUiThread {
-                    findViewById<ListView>(R.id.commonItemList).adapter = SimpleAdapter(
-                            this,
-                            FileItem.commonItemList, R.layout.list_items,
-                            arrayOf("item_image", "item_title", "item_size"),
-                            intArrayOf(R.id.item_image, R.id.item_title, R.id.item_size)
-                    )
-                    findViewById<ListView>(R.id.commonItemList).setOnItemClickListener({ parent, view, position, id ->
-                        if (FileItem.commonFileItemList[position].isDictionary) {
-                            var temp = getNowPath()
-                            temp += "${FileItem.commonFileItemList[position].itemName}/"
-                            showCommonList(temp)
-                            setNowPath(temp)
-                        } else {
-                            Thread(Runnable {
-                                utils.download(getNowPath(), FileItem.commonFileItemList[position].itemName)
-                            }).start()
-                            Toast.makeText(this, "成功开始下载至/cloudStorage", Toast.LENGTH_SHORT).show()
+                    findViewById<ListView>(R.id.commonItemList).adapter = object : BaseAdapter() {
+                        @SuppressLint("ViewHolder", "InflateParams")
+                        override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
+                            val view = LayoutInflater.from(parent!!.context).inflate(R.layout.list_items, null)
+                            val imgView = view.findViewById<ImageView>(R.id.item_image)
+                            val titleView = view.findViewById<TextView>(R.id.item_title)
+                            val sizeView = view.findViewById<TextView>(R.id.item_size)
+
+                            val downloadBtn = view.findViewById<Button>(R.id.btn_download)
+
+                            titleView.setOnClickListener {
+                                if (FileItem.commonFileItemList[position].isDictionary) {
+                                    var temp = getNowPath()
+                                    temp += "${FileItem.commonFileItemList[position].itemName}/"
+                                    showCommonList(temp)
+                                    setNowPath(temp)
+                                }
+                            }
+
+                            downloadBtn.setOnClickListener {
+                                if (!FileItem.commonFileItemList[position].isDictionary) {
+                                    Thread(Runnable {
+                                        ApiUtils.get().download(getNowPath(), FileItem.commonFileItemList[position].itemName)
+                                    }).start()
+                                    Toast.makeText(view.context, "成功开始下载 ${FileItem.commonFileItemList[position].itemName} 至/cloudStorage", Toast.LENGTH_SHORT).show()
+
+                                } else {
+                                    Toast.makeText(view.context, "暂时不支持下载文件夹", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+
+                            imgView.setImageResource(FileItem.commonItemList[position]["item_image"] as Int)
+                            titleView.text = FileItem.commonItemList[position]["item_title"] as String
+                            sizeView.text = FileItem.commonItemList[position]["item_size"] as String
+
+
+                            return view
                         }
-                    })
+
+                        override fun getItem(position: Int): Any {
+                            return position
+                        }
+
+                        override fun getItemId(position: Int): Long {
+                            return position.toLong()
+                        }
+
+                        override fun getCount(): Int {
+                            return FileItem.commonItemList.size
+                        }
+                    }
                 }
             } catch (e: ConnectException) {
                 runOnUiThread { UiUtils.showNetworkError(this) }
@@ -222,7 +258,7 @@ class MainActivity : AppCompatActivity() {
                 Log.v("path:", path)
                 val tempList = mutableListOf<Map<String, Any>>()
                 FileItem.myFileItemList = utils.getItemsByPath(path, true)
-                FileItem.myFileItemList.forEach{
+                FileItem.myFileItemList.forEach {
                     tempList.add(mapOf(
                             "item_image" to if (it.isDictionary) R.drawable.folder_32 else R.drawable.documents_32,
                             "item_title" to it.itemName,
@@ -230,26 +266,66 @@ class MainActivity : AppCompatActivity() {
                     ))
                 }
                 FileItem.myItemList = tempList
+
                 runOnUiThread {
-                    findViewById<ListView>(R.id.myItemList).adapter = SimpleAdapter(
-                            this,
-                            FileItem.myItemList, R.layout.list_items,
-                            arrayOf("item_image", "item_title", "item_size"),
-                            intArrayOf(R.id.item_image, R.id.item_title, R.id.item_size)
-                    )
-                    findViewById<ListView>(R.id.myItemList).setOnItemClickListener({ parent, view, position, id ->
-                        if (FileItem.myFileItemList[position].isDictionary) {
-                            var temp = getNowPath()
-                            temp += "${FileItem.myFileItemList[position].itemName}/"
-                            showMyList(temp)
-                            setNowPath(temp)
-                        } else {
-                            Thread(Runnable {
-                                utils.download(getNowPath(), FileItem.myFileItemList[position].itemName)
-                            }).start()
-                            Toast.makeText(this, "成功开始下载至/cloudStorage", Toast.LENGTH_SHORT).show()
+                    findViewById<ListView>(R.id.myItemList).adapter = object : BaseAdapter() {
+                        @SuppressLint("ViewHolder", "InflateParams")
+                        override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
+                            val view = LayoutInflater.from(parent!!.context).inflate(R.layout.list_items_editable, null)
+                            val imgView = view.findViewById<ImageView>(R.id.item_image)
+                            val titleView = view.findViewById<TextView>(R.id.item_title)
+                            val sizeView = view.findViewById<TextView>(R.id.item_size)
+
+                            val downloadBtn = view.findViewById<Button>(R.id.btn_download)
+
+                            titleView.setOnClickListener {
+                                if (FileItem.myFileItemList[position].isDictionary) {
+                                    var temp = getNowPath()
+                                    temp += "${FileItem.myFileItemList[position].itemName}/"
+                                    showMyList(temp)
+                                    setNowPath(temp)
+                                }
+                            }
+
+                            view.setOnClickListener {
+                                if (FileItem.myFileItemList[position].isDictionary) {
+                                    var temp = getNowPath()
+                                    temp += "${FileItem.myFileItemList[position].itemName}/"
+                                    showMyList(temp)
+                                    setNowPath(temp)
+                                }
+                            }
+
+                            downloadBtn.setOnClickListener {
+                                if (!FileItem.myFileItemList[position].isDictionary) {
+                                    Thread(Runnable {
+                                        ApiUtils.get().download(getNowPath(), FileItem.myFileItemList[position].itemName)
+                                    }).start()
+                                    Toast.makeText(view.context, "成功开始下载 ${FileItem.myFileItemList[position].itemName} 至/cloudStorage", Toast.LENGTH_SHORT).show()
+
+                                } else {
+                                    Toast.makeText(view.context, "暂时不支持下载文件夹", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+
+                            imgView.setImageResource(FileItem.myItemList[position]["item_image"] as Int)
+                            titleView.text = FileItem.myItemList[position]["item_title"] as String
+                            sizeView.text = FileItem.myItemList[position]["item_size"] as String
+                            return view
                         }
-                    })
+
+                        override fun getItem(position: Int): Any {
+                            return position
+                        }
+
+                        override fun getItemId(position: Int): Long {
+                            return position.toLong()
+                        }
+
+                        override fun getCount(): Int {
+                            return FileItem.myItemList.size
+                        }
+                    }
                 }
             } catch (e: ConnectException) {
                 runOnUiThread { UiUtils.showNetworkError(this) }
