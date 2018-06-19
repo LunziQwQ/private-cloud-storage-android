@@ -23,7 +23,7 @@ class ApiUtils private constructor() {
         const val DOMAIN_ADDRESS = "http://192.168.0.114:8080"
         const val apiRootUrl = "$DOMAIN_ADDRESS/api"
         const val loginUrl = "$apiRootUrl/session"
-        const val getUserUrl = "$apiRootUrl/user/"
+        const val userUrl = "$apiRootUrl/user/"
         const val itemUrl = "$apiRootUrl/item/"
         const val fileLoadUrl = "$apiRootUrl/file/"
         fun get(): ApiUtils {
@@ -52,14 +52,25 @@ class ApiUtils private constructor() {
     }
 
 
-    fun getItemsByPath(path: String): List<FileItem> {
+    fun getItemsByPath(path: String, withLogin: Boolean): List<FileItem> {
         val path = getItemsURL(path)
         val connection = URL(path).openConnection() as HttpURLConnection
         connection.requestMethod = "GET"
-        if (isLogin) {
+        if (withLogin && isLogin) {
             connection.setRequestProperty("Cookie", session.split(";")[0])
         }
         return getFileItemListByJson(inputStreamToString(connection.inputStream))
+    }
+
+    fun register(username: String, password: String): Boolean {
+        val connection = URL("$userUrl$username").openConnection() as HttpURLConnection
+        connection.requestMethod = "POST"
+        connection.setRequestProperty("Content-Type", "application/json")
+        connection.doOutput = true
+        val outputStream = connection.outputStream
+        outputStream.write("{\"password\":\"$password\"}".toByteArray())
+        val responseCode = connection.responseCode
+        return responseCode == 200
     }
 
     fun login(username: String, password: String): Boolean {
@@ -83,11 +94,12 @@ class ApiUtils private constructor() {
             @JsonProperty("isExist") val isExist: Boolean,
             @JsonProperty("username") val username: String,
             @JsonProperty("space") val space: Int,
+            @JsonProperty("usage") val usage: Int,
             @JsonProperty("index") val index: String)
 
 
     fun getUser(username: String): UserInfo? {
-        val url = "$getUserUrl$username"
+        val url = "$userUrl$username"
         val connection = URL(url).openConnection() as HttpURLConnection
         connection.requestMethod = "GET"
         return if (connection.responseCode == 404) null else {
@@ -138,7 +150,6 @@ class ApiUtils private constructor() {
 
     fun readInputStream(inputStream: InputStream): ByteArray {
         val buffer = ByteArray(1024)
-        var len = 0
         val bos = ByteArrayOutputStream()
         while (true) {
             val len = inputStream.read(buffer)

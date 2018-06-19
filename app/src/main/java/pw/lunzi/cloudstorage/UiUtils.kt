@@ -11,7 +11,7 @@ import android.widget.PopupWindow
 
 class UiUtils {
     companion object {
-        fun showNetworkError(context: Context){
+        fun showNetworkError(context: Context) {
             val builder = AlertDialog.Builder(context)
             builder.setTitle(context.getString(R.string.alert_nointernet))
             builder.setNegativeButton(context.getString(R.string.word_gotit), { _, _ -> })
@@ -33,6 +33,13 @@ class UiUtils {
         fun showLoginSuccess(context: Context, activity: AppCompatActivity) {
             val builder = AlertDialog.Builder(context)
             builder.setTitle(R.string.word_loginsuccess)
+            builder.setPositiveButton(context.getString(R.string.word_gotit), { _, _ -> activity.finish() })
+            builder.create().show()
+        }
+
+        fun showRegisterSuccess(context: Context, activity: AppCompatActivity) {
+            val builder = AlertDialog.Builder(context)
+            builder.setTitle(R.string.word_register_success)
             builder.setPositiveButton(context.getString(R.string.word_gotit), { _, _ -> activity.finish() })
             builder.create().show()
         }

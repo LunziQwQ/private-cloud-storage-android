@@ -6,9 +6,6 @@ import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.KeyEvent
 import android.view.View
-import android.widget.ArrayAdapter
-import android.widget.ListView
-import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
 import java.net.ConnectException
 import android.content.pm.PackageManager
@@ -18,8 +15,7 @@ import android.content.Intent
 import android.app.Activity
 import android.support.design.internal.BottomNavigationItemView
 import android.support.v4.view.ViewPager
-import android.view.animation.AnticipateInterpolator
-import android.widget.SimpleAdapter
+import android.widget.*
 
 
 @Suppress("DEPRECATED_IDENTITY_EQUALS")
@@ -68,7 +64,14 @@ class MainActivity : AppCompatActivity() {
                     findViewById<BottomNavigationItemView>(R.id.navigation_common).performClick()
                 } else {
                     pager!!.currentItem = 2
-                    //Todo()
+
+                    val seekBar = findViewById<ProgressBar>(R.id.progress_usage)
+                    findViewById<TextView>(R.id.lable_username).text = ApiUtils.userInfo!!.username
+                    findViewById<TextView>(R.id.lable_userAuth).text = if (ApiUtils.userInfo!!.username == "root") "Admin" else "Member"
+                    findViewById<TextView>(R.id.lable_usage).text = "${Utils.getSizeString(ApiUtils.userInfo!!.usage)}/${Utils.getSizeString(ApiUtils.userInfo!!.space)}"
+                    seekBar.max = ApiUtils.userInfo!!.space
+                    seekBar.progress = ApiUtils.userInfo!!.usage
+                    seekBar.isClickable = false
                 }
                 return@OnNavigationItemSelectedListener ApiUtils.isLogin
             }
@@ -176,7 +179,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 Log.v("path:", path)
                 val tempList = mutableListOf<Map<String, Any>>()
-                FileItem.commonFileItemList = utils.getItemsByPath(path)
+                FileItem.commonFileItemList = utils.getItemsByPath(path, false)
                 FileItem.commonFileItemList.forEach {
                     tempList.add(mapOf(
                             "item_image" to if (it.isDictionary) R.drawable.folder_32 else R.drawable.documents_32,
@@ -218,7 +221,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 Log.v("path:", path)
                 val tempList = mutableListOf<Map<String, Any>>()
-                FileItem.myFileItemList = utils.getItemsByPath(path)
+                FileItem.myFileItemList = utils.getItemsByPath(path, true)
                 FileItem.myFileItemList.forEach{
                     tempList.add(mapOf(
                             "item_image" to if (it.isDictionary) R.drawable.folder_32 else R.drawable.documents_32,

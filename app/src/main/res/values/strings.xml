@@ -20,5 +20,6 @@
     <string name="tips_usernameempty">Username can not be empty</string>
     <string name="tips_passwordempty">Password can not be empty</string>
     <string name="word_loginsuccess">Login success!</string>
+    <string name="word_register_success">Register success. Already login!</string>
     <string name="tips_inputName">Please input item name:</string>
 </resources>
