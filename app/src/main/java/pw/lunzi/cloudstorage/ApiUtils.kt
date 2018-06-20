@@ -20,7 +20,7 @@ class ApiUtils private constructor() {
         var session = ""
         var userInfo: UserInfo? = null
 
-        const val DOMAIN_ADDRESS = "http://192.168.0.185:9000"
+        const val DOMAIN_ADDRESS = "http://192.168.0.114:8080"
         const val apiRootUrl = "$DOMAIN_ADDRESS/api"
         const val loginUrl = "$apiRootUrl/session"
         const val userUrl = "$apiRootUrl/user/"
@@ -89,6 +89,21 @@ class ApiUtils private constructor() {
             userInfo = getUser(username)
         }
         outputStream.close()
+        return responseCode == 200
+    }
+
+    fun changeMyPassword(oldPassword: String, newPassword: String): Boolean {
+        val url = "$userUrl${userInfo!!.username}/password"
+        val connection = URL(url).openConnection() as HttpURLConnection
+        connection.requestMethod = "PUT"
+        connection.setRequestProperty("Content-Type", "application/json")
+        connection.setRequestProperty("Cookie", session.split(";")[0])
+        connection.doOutput = true
+        val outputStream = connection.outputStream
+        outputStream.write("{\"oldPassword\":\"$oldPassword\",\"newPassword\":\"$newPassword\"}".toByteArray())
+        outputStream.flush()
+        outputStream.close()
+        val responseCode = connection.responseCode
         return responseCode == 200
     }
 

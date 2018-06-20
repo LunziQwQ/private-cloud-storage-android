@@ -41,7 +41,14 @@ class UiUtils {
         fun showLoginSuccess(context: Context, activity: AppCompatActivity) {
             val builder = AlertDialog.Builder(context)
             builder.setTitle(R.string.word_loginsuccess)
-            builder.setPositiveButton(context.getString(R.string.word_gotit), { _, _ -> activity.finish() })
+            builder.setPositiveButton(context.getString(R.string.word_gotit)) { _, _ -> activity.finish() }
+            builder.create().show()
+        }
+
+        fun showChangePasswordSuccess(context: Context, activity: AppCompatActivity) {
+            val builder = AlertDialog.Builder(context)
+            builder.setTitle("Change password success")
+            builder.setPositiveButton(context.getString(R.string.word_gotit)) { _, _ -> activity.finish() }
             builder.create().show()
         }
 

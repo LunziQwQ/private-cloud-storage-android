@@ -14,6 +14,7 @@ import android.os.Build
 import android.support.annotation.RequiresApi
 import android.content.Intent
 import android.app.Activity
+import android.graphics.Color
 import android.support.design.internal.BottomNavigationItemView
 import android.support.v4.view.ViewPager
 import android.view.LayoutInflater
@@ -129,6 +130,10 @@ class MainActivity : AppCompatActivity() {
         } else {
             UiUtils.showNeedLoginAlert(this, this)
         }
+    }
+
+    fun changePwdOnClick(view: View) {
+        startActivity(Intent("ChangePassword"))
     }
 
     fun mkdir(name: String, path: String) {
@@ -334,6 +339,11 @@ class MainActivity : AppCompatActivity() {
                                 } else {
                                     changeItemAccess(getNowPath(), FileItem.myFileItemList[position].itemName, false, !FileItem.myFileItemList[position].isPublic)
                                 }
+                            }
+
+                            if (FileItem.myFileItemList[position].isPublic) {
+                                titleView.setTextColor(Color.rgb(63, 119, 4))
+                                titleView.paint.isFakeBoldText = true
                             }
 
                             imgView.setImageResource(FileItem.myItemList[position]["item_image"] as Int)
