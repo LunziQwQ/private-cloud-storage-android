@@ -12,6 +12,13 @@
         tools:ignore="MissingConstraints"
         tools:layout_editor_absoluteX="-1dp">
 
+        <Button
+            android:id="@+id/btn_userlist"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="userListOnClick"
+            android:text="Visit other user's space" />
+
         <TextView
             android:id="@+id/textView_commonPath"
             android:layout_width="match_parent"
@@ -27,6 +34,9 @@
         <ListView
             android:id="@+id/commonItemList"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent">
+
+        </ListView>
+
     </LinearLayout>
 </android.support.constraint.ConstraintLayout>

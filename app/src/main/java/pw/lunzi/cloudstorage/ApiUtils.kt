@@ -22,8 +22,9 @@ class ApiUtils private constructor() {
 
         const val DOMAIN_ADDRESS = "http://192.168.0.114:8080"
         const val apiRootUrl = "$DOMAIN_ADDRESS/api"
-        const val loginUrl = "$apiRootUrl/session"
+        const val sessionUrl = "$apiRootUrl/session"
         const val userUrl = "$apiRootUrl/user/"
+        const val userListUrl = "$apiRootUrl/users/"
         const val itemUrl = "$apiRootUrl/item/"
         const val fileLoadUrl = "$apiRootUrl/file/"
         fun get(): ApiUtils {
@@ -42,6 +43,11 @@ class ApiUtils private constructor() {
         return mapper.readValue<ArrayList<FileItem>>(jsonStr, javaType)
     }
 
+    private fun getUserItemListByJson(jsonStr: String):List<UserListItem>{
+        val javaType = mapper.typeFactory.constructCollectionType(List::class.java, UserListItem::class.java)
+        return mapper.readValue<ArrayList<UserListItem>>(jsonStr, javaType)
+    }
+
     private fun inputStreamToString(inputStream: InputStream): String {
         val br = BufferedReader(InputStreamReader(inputStream))
         val sb = StringBuilder()
@@ -49,6 +55,13 @@ class ApiUtils private constructor() {
             sb.append(br.readLine() ?: break).append("\n")
         }
         return sb.toString()
+    }
+
+    fun getUserList(page: Int): List<UserListItem> {
+        val url = "$userListUrl$page"
+        val connection = URL(url).openConnection() as HttpURLConnection
+        connection.requestMethod = "GET"
+        return getUserItemListByJson(inputStreamToString(connection.inputStream))
     }
 
 
@@ -75,7 +88,7 @@ class ApiUtils private constructor() {
     }
 
     fun login(username: String, password: String): Boolean {
-        val connection = URL(loginUrl).openConnection() as HttpURLConnection
+        val connection = URL(sessionUrl).openConnection() as HttpURLConnection
         val data = "username=$username&password=$password"
         connection.requestMethod = "POST"
         connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
@@ -124,12 +137,19 @@ class ApiUtils private constructor() {
         return responseCode == 200
     }
 
-    data class UserInfo(
-            @JsonProperty("isExist") val isExist: Boolean,
-            @JsonProperty("username") val username: String,
-            @JsonProperty("space") val space: Int,
-            @JsonProperty("usage") val usage: Int,
-            @JsonProperty("index") val index: String)
+    fun logout(): Boolean {
+        val connection = URL(sessionUrl).openConnection() as HttpURLConnection
+        connection.requestMethod = "DELETE"
+        connection.setRequestProperty("Content-Type", "application/json")
+        connection.setRequestProperty("Cookie", session.split(";")[0])
+        val responseCode = connection.responseCode
+        if (responseCode == 200) {
+            isLogin = false
+            session = ""
+            userInfo = null
+        }
+        return responseCode == 200
+    }
 
 
     fun getUser(username: String): UserInfo? {
@@ -275,4 +295,17 @@ class ApiUtils private constructor() {
             Log.e("result", "result : $result")
         }
     }
+
+    data class UserInfo(
+            @JsonProperty("isExist") val isExist: Boolean,
+            @JsonProperty("username") val username: String,
+            @JsonProperty("space") val space: Int,
+            @JsonProperty("usage") val usage: Int,
+            @JsonProperty("index") val index: String)
+
+    data class UserListItem(
+            @JsonProperty("username") val username: String,
+            @JsonProperty("userURL") val indexUrl: String,
+            @JsonProperty("admin") val isAdmin: Boolean
+    )
 }

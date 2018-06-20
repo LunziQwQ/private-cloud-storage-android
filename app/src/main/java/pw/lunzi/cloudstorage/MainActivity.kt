@@ -99,27 +99,39 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        var path: String
-        if (resultCode === Activity.RESULT_OK) {
-            val uri = data!!.data
-            Log.v("uri", uri.toString())
-            if ("file".equals(uri.scheme, ignoreCase = true)) {//使用第三方应用打开
-                path = uri.path
-                Toast.makeText(this, path + "11111", Toast.LENGTH_SHORT).show()
-                return
-            }
-            try {
-                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT) {//4.4以后
-                    path = UriToPath.getPath(this, uri)!!
-                    Thread(Runnable {
-                        utils.upload(getNowPath(), path, this)
-                        runOnUiThread {
-                            showMyList(getNowPath())
+        when (requestCode) {
+            1 -> {
+                val path: String
+                if (resultCode === Activity.RESULT_OK) {
+                    val uri = data!!.data
+                    Log.v("uri", uri.toString())
+                    if ("file".equals(uri.scheme, ignoreCase = true)) {//使用第三方应用打开
+                        path = uri.path
+                        Thread(Runnable {
+                            utils.upload(getNowPath(), path, this)
+                            runOnUiThread {
+                                showMyList(getNowPath())
+                            }
+                        }).start()
+                    } else {
+                        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT) {//4.4以后
+                            path = UriToPath.getPath(this, uri)!!
+                            Thread(Runnable {
+                                utils.upload(getNowPath(), path, this)
+                                runOnUiThread {
+                                    showMyList(getNowPath())
+                                }
+                            }).start()
                         }
-                    }).start()
+                    }
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
+            }
+            2 -> {
+                if (resultCode == Activity.RESULT_OK) {
+                    val username = data!!.extras.getString("username")
+                    setNowPath("$username/")
+                    showCommonList("$username/")
+                }
             }
         }
     }
@@ -134,6 +146,26 @@ class MainActivity : AppCompatActivity() {
 
     fun changePwdOnClick(view: View) {
         startActivity(Intent("ChangePassword"))
+    }
+
+    fun logoutOnClick(view: View) {
+        Thread(Runnable {
+            if (utils.logout()) {
+                runOnUiThread {
+                    UiUtils.showError(this, "Logout success")
+                    findViewById<BottomNavigationItemView>(R.id.navigation_common).performClick()
+                }
+            } else {
+                runOnUiThread {
+                    UiUtils.showError(this, "Logout failed. Please try again.")
+                }
+            }
+        }).start()
+    }
+
+    fun userListOnClick(view: View) {
+        val intent = Intent("UserList")
+        startActivityForResult(intent, 2)
     }
 
     fun mkdir(name: String, path: String) {
