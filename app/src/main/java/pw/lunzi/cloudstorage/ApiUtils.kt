@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import java.io.*
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.URLDecoder
 import java.util.*
 
 
@@ -166,6 +167,25 @@ class ApiUtils private constructor() {
         }
     }
 
+    fun updateMyInfo(){
+        userInfo = getUser(userInfo!!.username)
+    }
+
+    fun transferItem(targetPath: String, itemPath: String, itemName: String):Boolean {
+        val url = getItemsURL(targetPath)
+        val connection = URL(url).openConnection() as HttpURLConnection
+        connection.requestMethod = "POST"
+        connection.setRequestProperty("Content-Type", "application/json")
+        connection.setRequestProperty("Cookie", session.split(";")[0])
+        connection.doOutput = true
+        val outputStream = connection.outputStream
+        outputStream.write("{\"path\":\"$itemPath\",\"name\":\"$itemName\"}".toByteArray())
+        outputStream.flush()
+        outputStream.close()
+        val responseCode = connection.responseCode
+        return responseCode == 200
+    }
+
     fun deleteItem(path: String, name: String): Boolean {
         val url = "$itemUrl$path$name"
         val connection = URL(url).openConnection() as HttpURLConnection
@@ -211,9 +231,8 @@ class ApiUtils private constructor() {
     }
 
     fun download(path: String, name: String) {
-        val url = "$fileLoadUrl$path$name".replace(" ", "%20")
-        Log.i("download URL : ", url)
-        val savePath = Environment.getExternalStorageDirectory().absolutePath+"/cloudStorage"
+        val url = URLDecoder.decode("$fileLoadUrl$path$name", "utf-8")
+        val savePath = Environment . getExternalStorageDirectory ().absolutePath + "/cloudStorage"
         val connection = URL(url).openConnection() as HttpURLConnection
         if (isLogin) connection.setRequestProperty("Cookie", session.split(";")[0])
         File(savePath).mkdir()

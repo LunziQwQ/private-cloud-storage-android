@@ -44,4 +44,11 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:text=" 下载 " />
+
+    <Button
+        android:id="@+id/btn_transfer"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:text=" 转存 " />
 </com.mcxtzhang.swipemenulib.SwipeMenuLayout>

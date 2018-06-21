@@ -65,7 +65,7 @@ class MainActivity : AppCompatActivity() {
                     findViewById<BottomNavigationItemView>(R.id.navigation_common).performClick()
                 } else {
                     pager!!.currentItem = 1
-                    if (myPath == "") setNowPath(ApiUtils.userInfo!!.username + "/")
+                    if (myPath == "" || myPath.split("/")[0] != ApiUtils.userInfo!!.username) setNowPath(ApiUtils.userInfo!!.username + "/")
                     showMyList(myPath)
                 }
                 return@OnNavigationItemSelectedListener ApiUtils.isLogin
@@ -76,14 +76,18 @@ class MainActivity : AppCompatActivity() {
                     findViewById<BottomNavigationItemView>(R.id.navigation_common).performClick()
                 } else {
                     pager!!.currentItem = 2
-
-                    val seekBar = findViewById<ProgressBar>(R.id.progress_usage)
-                    findViewById<TextView>(R.id.lable_username).text = ApiUtils.userInfo!!.username
-                    findViewById<TextView>(R.id.lable_userAuth).text = if (ApiUtils.userInfo!!.username == "root") "Admin" else "Member"
-                    findViewById<TextView>(R.id.lable_usage).text = "${Utils.getSizeString(ApiUtils.userInfo!!.usage)}/${Utils.getSizeString(ApiUtils.userInfo!!.space)}"
-                    seekBar.max = ApiUtils.userInfo!!.space
-                    seekBar.progress = ApiUtils.userInfo!!.usage
-                    seekBar.isClickable = false
+                    Thread(Runnable {
+                        utils.updateMyInfo()
+                        runOnUiThread{
+                            val seekBar = findViewById<ProgressBar>(R.id.progress_usage)
+                            findViewById<TextView>(R.id.lable_username).text = ApiUtils.userInfo!!.username
+                            findViewById<TextView>(R.id.lable_userAuth).text = if (ApiUtils.userInfo!!.username == "root") "Admin" else "Member"
+                            findViewById<TextView>(R.id.lable_usage).text = "${Utils.getSizeString(ApiUtils.userInfo!!.usage)}/${Utils.getSizeString(ApiUtils.userInfo!!.space)}"
+                            seekBar.max = ApiUtils.userInfo!!.space
+                            seekBar.progress = ApiUtils.userInfo!!.usage
+                            seekBar.isClickable = false
+                        }
+                    }).start()
                 }
                 return@OnNavigationItemSelectedListener ApiUtils.isLogin
             }
@@ -244,6 +248,7 @@ class MainActivity : AppCompatActivity() {
                             val titleView = view.findViewById<TextView>(R.id.item_title)
                             val sizeView = view.findViewById<TextView>(R.id.item_size)
 
+                            val transferBtn = view.findViewById<Button>(R.id.btn_transfer)
                             val downloadBtn = view.findViewById<Button>(R.id.btn_download)
 
                             titleView.setOnClickListener {
@@ -264,6 +269,21 @@ class MainActivity : AppCompatActivity() {
 
                                 } else {
                                     Toast.makeText(view.context, "暂时不支持下载文件夹", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+
+                            transferBtn.setOnClickListener {
+                                if (ApiUtils.isLogin) {
+                                    val ownerName = FileItem.commonFileItemList[position].path.split("/")[1]
+                                    if (FileItem.commonFileItemList[position].path.split("/")[1] == ApiUtils.userInfo!!.username) {
+                                        Toast.makeText(view.context, "您无法转存属于自己的文件", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Thread(Runnable {
+                                            UiUtils.showTransferAlert(this@MainActivity, this@MainActivity, FileItem.commonFileItemList[position].path, FileItem.commonFileItemList[position].itemName)
+                                        }).start()
+                                    }
+                                } else {
+                                    Toast.makeText(view.context, "您还未登录，无法转存", Toast.LENGTH_SHORT).show()
                                 }
                             }
 
@@ -294,6 +314,23 @@ class MainActivity : AppCompatActivity() {
             }
         }).start()
     }
+
+    fun transferItem(targetPath: String, itemPath: String, itemName: String) {
+        Thread(Runnable {
+            if (utils.getItemsByPath("$targetPath", true).filter { it.itemName == itemName }.count() > 0) {
+                runOnUiThread {
+                    UiUtils.showError(this, "Failed. Target path have same name item.")
+                }
+            } else {
+                if(utils.transferItem(targetPath,itemPath,itemName)){
+                    runOnUiThread{
+                        UiUtils.showError(this, "Transfer success")
+                    }
+                }
+            }
+        }).start()
+    }
+
 
     private fun showMyList(path: String) {
         Thread(Runnable {

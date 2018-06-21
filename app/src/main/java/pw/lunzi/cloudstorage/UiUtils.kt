@@ -5,11 +5,9 @@ import android.content.Intent
 import android.support.design.internal.BottomNavigationItemView
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
+import android.text.Editable
 import android.util.Log
-import android.widget.Button
-import android.widget.CheckBox
-import android.widget.EditText
-import android.widget.PopupWindow
+import android.widget.*
 import java.security.cert.CertPath
 
 class UiUtils {
@@ -98,6 +96,32 @@ class UiUtils {
             }
             builder.setNegativeButton(context.getString(R.string.word_cancle), { _, _ -> })
             builder.create().show()
+        }
+
+        fun showTransferAlert(context: Context, activity: MainActivity, itemPath: String, itemName: String) {
+            val builder = AlertDialog.Builder(context)
+            var path = "${ApiUtils.userInfo!!.username}/"
+            builder.setTitle("选择要分分享到的目录：$path")
+            var list = ApiUtils.get().getItemsByPath(path, true).filter { it.isDictionary }.map { it.itemName }
+            val listView = ListView(context)
+            listView.adapter = ArrayAdapter(context, android.R.layout.simple_list_item_1, list)
+            listView.setOnItemClickListener { _, _, position, _ ->
+                Thread(Runnable {
+                    path = "$path${list[position]}/"
+                    list = ApiUtils.get().getItemsByPath(path, true).filter { it.isDictionary }.map { it.itemName }
+                    activity.runOnUiThread {
+                        listView.adapter = ArrayAdapter(context, android.R.layout.simple_list_item_1, list)
+                    }
+                }).start()
+            }
+            builder.setView(listView)
+            builder.setPositiveButton(context.getString(R.string.word_gotit)) { _, _ ->
+                activity.transferItem(path, itemPath, itemName)
+            }
+            builder.setNegativeButton(context.getString(R.string.word_cancle)) { _, _ -> }
+            activity.runOnUiThread {
+                builder.create().show()
+            }
         }
     }
 }
