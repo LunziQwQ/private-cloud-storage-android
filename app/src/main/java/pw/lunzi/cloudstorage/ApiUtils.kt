@@ -21,7 +21,7 @@ class ApiUtils private constructor() {
         var session = ""
         var userInfo: UserInfo? = null
 
-        const val DOMAIN_ADDRESS = "http://192.168.0.114:8080"
+        const val DOMAIN_ADDRESS = "http://192.168.43.170:9000"
         const val apiRootUrl = "$DOMAIN_ADDRESS/api"
         const val sessionUrl = "$apiRootUrl/session"
         const val userUrl = "$apiRootUrl/user/"
